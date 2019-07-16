@@ -1,3 +1,6 @@
+'use strict'
+
+
 const $ = (selector) => document.querySelector(selector)
 let activeGroup = null
 const getActiveGroup = () => {
@@ -6,13 +9,10 @@ const getActiveGroup = () => {
     alert('Pick a group first')
 }
 
-const createList = (text) => {
+const createList = (text, checked = false) => {
     return {
         text,
-        remove: () => {
-            personalList.deleteTodo(this._id)
-        },
-        done: false,
+        done: checked,
         time: Date.now()
     }
 }
@@ -41,6 +41,12 @@ const ListHolder = (listName) => {
 
 const personalList = ListHolder('Personal List')
 const shoppingList = ListHolder('Shoppig List')
+personalList.addTodo(createList('Get something from the shop', true))
+personalList.addTodo(createList('Dance around the park.'))
+personalList.addTodo(createList('Nothing really.'))
+personalList.addTodo(createList('Fancy Coding.'))
+personalList.addTodo(createList('Kill sy', true)) 
+personalList.addTodo(createList('Kill somebody', true))
 
 const taskGroups = [personalList, shoppingList]
 
@@ -48,6 +54,10 @@ const createListElement = item => {
     const list = document.createElement('li') // Node/Element
     const checkInput = document.createElement('input')
     checkInput.setAttribute('type', 'checkbox')
+    checkInput.checked = item.done
+    checkInput.addEventListener('change', () => {
+        item.done = !item.done
+    })
 
     const delButton = document.createElement('button')
     delButton.textContent = 'delete'
@@ -66,22 +76,45 @@ const createListElement = item => {
 const renderList = (list) => {
     const ul = $('ul')
     ul.innerHTML = ''
-    for (let item of list) {
+
+    const sorted = list.sort(a => {
+        return a.done ? 1 : -1;
+    })
+    /* 
+    const before = []
+     const after = []
+     for (let item of list) 
+         (item.done) ? after.push(item) : before.push(item)
+    
+     for (let item of before.concat(after)) {
+     for (let item of [...before, ...after]) {
+    */
+    for (let item of sorted) {
         ul.append(createListElement(item))
     }
 }
 
 window.addEventListener('load', () => {
+    renderList(personalList.getList())
+
     const input = $('input[name=taskname]')
     const button = $('button')
-
-    button.addEventListener('click', () => {
-        if (input.value === '') return
-        getActiveGroup().addTodo(createList(input.value))
-
+    const addInputValue = (value_str) => {
+        if (value_str.trim() === '') return
+        getActiveGroup().addTodo(createList(value_str))
         const allItems = getActiveGroup().getList() //array
         renderList(allItems)
-        input.value = ''
+    }
+    const clearInput = input => input.value = ''
+    input.addEventListener('keyup', (evt) => {
+        if (evt.keyCode === 13) {
+            addInputValue(input.value)
+            clearInput(input)
+        }
+    })
+    button.addEventListener('click', () => {
+        addInputValue(input.value)
+        clearInput(input)
     })
 
     const tab = $('nav.tabs')
